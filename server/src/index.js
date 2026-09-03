@@ -27,12 +27,50 @@ initCloudinary();
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, Render health checks)
+      if (!origin) return callback(null, true);
+      const allowed = [
+        process.env.CLIENT_URL,
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:3000",
+      ].filter(Boolean);
+      if (allowed.includes(origin) || allowed.includes("*") || !process.env.CLIENT_URL) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Root route for Render health checks and browser visits
+app.get("/", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Ritesh Kumar Portfolio API is running live 🚀",
+    health: "/api/health",
+    endpoints: {
+      profile: "/api/profile",
+      skills: "/api/skills",
+      experience: "/api/experience",
+      projects: "/api/projects",
+      certifications: "/api/certifications",
+      education: "/api/education",
+      contact: "/api/contact",
+    },
+  });
+});
+
+app.get("/health", (_req, res) => {
+  res.json({ success: true, status: "ok" });
+});
+
+app.get("/favicon.ico", (_req, res) => res.status(204).end());
 
 app.get("/api/health", (_req, res) => {
   res.json({ success: true, status: "ok" });
