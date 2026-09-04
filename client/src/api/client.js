@@ -23,9 +23,22 @@ api.interceptors.response.use(
 
 export function mediaUrl(url) {
   if (!url) return "";
-  if (url.startsWith("http")) return url;
-  const origin = import.meta.env.VITE_API_ORIGIN || "";
-  return `${origin}${url}`;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+  let origin = import.meta.env.VITE_API_ORIGIN;
+  if (!origin && import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith("http")) {
+    try {
+      origin = new URL(import.meta.env.VITE_API_URL).origin;
+    } catch {
+      origin = "";
+    }
+  }
+  if (!origin) {
+    origin = import.meta.env.DEV ? "http://localhost:5000" : "https://ritesh-wpda.onrender.com";
+  }
+  const cleanOrigin = origin.replace(/\/$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${cleanOrigin}${cleanPath}`;
 }
 
 export default api;
