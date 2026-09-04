@@ -17,6 +17,7 @@ import ExperiencePage from "./pages/admin/ExperiencePage";
 import ProjectsPage from "./pages/admin/ProjectsPage";
 import CertificationsPage from "./pages/admin/CertificationsPage";
 import EducationPage from "./pages/admin/EducationPage";
+import api from "./api/client";
 import MessagesPage from "./pages/admin/MessagesPage";
 import PasswordPage from "./pages/admin/PasswordPage";
 
@@ -28,6 +29,13 @@ export default function App() {
       once: true,
       offset: 50,
     });
+
+    // Background keep-alive: ping health endpoint every 10 mins while user has site open
+    const timer = setInterval(() => {
+      api.get("/health").catch(() => {});
+    }, 10 * 60 * 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   return (

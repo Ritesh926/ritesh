@@ -88,10 +88,39 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+// Keep-Alive Self-Pinger: pings public URL every 13 minutes to prevent Render free-tier sleep
+function startKeepAlive() {
+  const publicUrl = process.env.RENDER_EXTERNAL_URL || "https://ritesh-wpda.onrender.com";
+  const intervalMs = 13 * 60 * 1000; // 13 minutes
+
+  // Initial ping after 30 seconds
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${publicUrl}/health`);
+      console.log(`[Keep-Alive] Initial ping to ${publicUrl}/health -> status: ${res.status}`);
+    } catch (err) {
+      console.error(`[Keep-Alive] Initial ping error: ${err.message}`);
+    }
+  }, 30000);
+
+  // Periodic ping every 13 minutes
+  setInterval(async () => {
+    try {
+      const res = await fetch(`${publicUrl}/health`);
+      console.log(`[Keep-Alive] Periodic ping to ${publicUrl}/health -> status: ${res.status}`);
+    } catch (err) {
+      console.error(`[Keep-Alive] Ping error: ${err.message}`);
+    }
+  }, intervalMs);
+}
+
 connectDb()
   .then(() => {
     app.listen(port, () => {
       console.log(`API listening on http://localhost:${port}`);
+      if (process.env.NODE_ENV === "production" || process.env.RENDER) {
+        startKeepAlive();
+      }
     });
   })
   .catch((error) => {
